@@ -14,48 +14,52 @@ export default class App extends Component {
     pictures: [],
     searchQuery: "",
     page: 1,
-    per_page: 12,
-    total: 0,
     totalPages: 0,
-    showModal: false,
     status: "idle",
-    error: null,
+    showModal: false,
     modalImg: null,
     modalAlt: null,
   };
 
   async componentDidUpdate(prevProps, prevState) {
-    const { per_page } = this.state;
     const prevStateQuery = prevState.searchQuery;
-    const prevStatePage = prevState.page;
-    const newQuery = this.state.searchQuery;
-    const newPage = this.state.page;
+    const searchQuery = this.state.searchQuery;
+    const prevPage = prevState.page;
+    const page = this.state.page;
 
-    if (prevStateQuery !== newQuery || prevStatePage !== newPage) {
+    if (prevStateQuery !== searchQuery || prevPage !== page) {
       this.setState({ status: "pending" });
+      if (prevStateQuery !== searchQuery) {
+        this.setState({ page: 1 });
+      }
 
       try {
-        const response = await API(newQuery, newPage);
+        const response = await API(searchQuery, page);
         console.log(response);
         const { total, hits } = response;
+        const selectedPictures = response.hits.map(
+          ({ id, webformatURL, largeImageURL, tags }) => {
+            return { id, webformatURL, largeImageURL, tags };
+          }
+        );
+
         if (total === 0) {
           this.setState({ status: "reject" });
-          return toast.error(`No "${newQuery}" query found!`);
+          return toast.error(`No "${searchQuery}" query found!`);
         }
-        if (total !== 0 && newPage === 1) {
+        if (total !== 0 && page === 1) {
           toast.success(`We found ${total} images according to your query!`);
+          this.setState({ totalPages: Math.ceil(total / hits.length) });
         }
         this.setState((prevState) => ({
-          total: total,
-          pictures: [...prevState.pictures, ...hits],
+          pictures: [...prevState.pictures, ...selectedPictures],
           status: "resolved",
-          totalPages: Math.ceil(total / per_page),
         }));
 
         this.scrollToBottom();
       } catch (error) {
         toast.error("Sorry, something went wrong!");
-        this.setState({ error, status: "rejected" });
+        this.setState({ status: "rejected" });
       }
     }
   }
@@ -74,6 +78,7 @@ export default class App extends Component {
   togleModal = () => {
     this.setState(({ showModal }) => ({ showModal: !showModal }));
   };
+
   handleModal = (src, alt) => {
     this.togleModal();
     this.setState({ modalImg: src, modalAlt: alt });
@@ -84,8 +89,16 @@ export default class App extends Component {
   };
 
   render() {
-    const { pictures, status, totalPages, showModal, modalImg, modalAlt } =
-      this.state;
+    const {
+      pictures,
+      status,
+      showModal,
+      modalImg,
+      modalAlt,
+      totalPages,
+      page,
+    } = this.state;
+
     return (
       <div className="App">
         <Searchbar onSubmit={this.handleFormSubmit} />
@@ -100,7 +113,7 @@ export default class App extends Component {
             this.endContainer = el;
           }}
         ></div>
-        {status === "resolved" && pictures.length < totalPages && (
+        {status === "resolved" && page < totalPages && (
           <LoadMoreButton onClick={this.incrementPage} />
         )}
         {status === "reject" && <div>Nic nie znaleziono</div>}

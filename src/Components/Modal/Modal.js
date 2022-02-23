@@ -6,6 +6,8 @@ import PropTypes from "prop-types";
 const modalRoot = document.querySelector("#modal-root");
 
 export default class Modal extends Component {
+  static propTypes = { children: PropTypes.node.isRequired };
+
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeydown);
   }
@@ -35,7 +37,3 @@ export default class Modal extends Component {
     );
   }
 }
-
-Modal.propTypes = {
-  children: PropTypes.object.isRequired,
-};
