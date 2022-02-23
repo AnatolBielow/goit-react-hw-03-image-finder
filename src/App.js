@@ -29,9 +29,6 @@ export default class App extends Component {
 
     if (prevStateQuery !== searchQuery || prevPage !== page) {
       this.setState({ status: "pending" });
-      if (prevStateQuery !== searchQuery) {
-        this.setState({ page: 1 });
-      }
 
       try {
         const response = await API(searchQuery, page);
@@ -68,7 +65,7 @@ export default class App extends Component {
     if (searchQuery === this.state.searchQuery) {
       return;
     }
-    this.setState({ searchQuery, pictures: [] });
+    this.setState({ searchQuery, pictures: [], page: 1 });
   };
 
   incrementPage = () => {
